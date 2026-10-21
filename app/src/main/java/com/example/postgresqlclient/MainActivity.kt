@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -32,6 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.postgresqlclient.data.ConnectionProfile
 import com.example.postgresqlclient.ui.theme.PostgreSQLClientTheme
 
 class MainActivity : ComponentActivity() {
@@ -167,4 +169,14 @@ fun HostField() {
 }
 
 @Composable
-fun SavedConnectionCard
+fun SavedConnectionCard (
+    profile: ConnectionProfile,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+
+    }
+
+}
