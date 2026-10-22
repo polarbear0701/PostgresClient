@@ -14,3 +14,8 @@ val PrimaryLight = Color(0xFF0F766E)
 val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryDark = Color(0xFF5EEAD4)
 val OnPrimaryDark = Color(0xFF042F2A)
+
+val PrimaryContainerLight = Color(0xFFCCEFEA)
+val OnPrimaryContainerLight = Color(0xFF042F2A)
+val PrimaryContainerDark = Color(0xFF0F4F49)
+val OnPrimaryContainerDark = Color(0xFFCCFBF1)

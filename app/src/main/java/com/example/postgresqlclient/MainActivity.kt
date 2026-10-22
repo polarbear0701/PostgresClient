@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -45,9 +46,12 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.postgresqlclient.data.ConnectionConfig
 import com.example.postgresqlclient.data.ConnectionProfile
+import com.example.postgresqlclient.data.TestResult
 import com.example.postgresqlclient.ui.theme.PostgreSQLClientTheme
 import com.example.postgresqlclient.viewmodel.ConnectionsViewModel
+import com.example.postgresqlclient.viewmodel.SessionViewmodel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,7 +85,11 @@ fun GreetingPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun HostField() {
+fun HostField(
+    modifier: Modifier = Modifier,
+    vm: ConnectionsViewModel = viewModel(),
+    session: SessionViewmodel = viewModel()
+) {
     var host by remember { mutableStateOf("") }
     var port by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
@@ -179,14 +187,25 @@ fun HostField() {
                 Button(
                     modifier = Modifier.padding(2.dp).width(100.dp).height(40.dp),
                     shape = RoundedCornerShape(8.dp),
-                    onClick = {},
+                    enabled = !session.isTesting && host.isNotBlank() && username.isNotBlank(),
+                    onClick = {
+                        session.test(
+                            ConnectionConfig(
+                                host = host,
+                                port = port.toIntOrNull() ?: 5432,
+                                database = defaultDatabase,
+                                username = username,
+                                password = password
+                            )
+                        )
+                    },
                     border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary),
                     colors = ButtonDefaults.outlinedButtonColors(
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.primary))
                 {
                     Text(
-                        text = "Test",
+                        if (session.isTesting) "Testing..." else "Test",
                         fontSize = 13.sp
                     )
                 }
@@ -229,6 +248,12 @@ fun HostField() {
                 )
             }
         }
+
+        when(val r = session.result) {
+            is TestResult.Success -> ResultCard("Connected in ${r.millis} ms", success = true)
+            is TestResult.Failure -> ResultCard(r.message, success = false)
+            null -> Unit
+        }
     }
 }
 
@@ -260,5 +285,19 @@ fun SavedConnectionCard (
             }
         }
     }
+}
 
+@Composable
+fun ResultCard(text: String, success: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (success) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.errorContainer,
+            contentColor = if (success) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onErrorContainer
+        )
+    ) {
+        Text(text = text, modifier = Modifier.padding(10.dp))
+    }
 }
