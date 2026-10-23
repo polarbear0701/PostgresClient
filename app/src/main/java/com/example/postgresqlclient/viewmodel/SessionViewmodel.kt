@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.postgresqlclient.data.ConnectionConfig
 import com.example.postgresqlclient.data.PostgresClient
+import com.example.postgresqlclient.data.TableInfo
+import com.example.postgresqlclient.data.TableResult
 import com.example.postgresqlclient.data.TestResult
 import kotlinx.coroutines.launch
 
@@ -16,6 +18,18 @@ class SessionViewmodel: ViewModel() {
         private set
 
     var result by mutableStateOf<TestResult?>(null)
+        private set
+
+    var isConnecting by mutableStateOf(false)
+        private set
+
+    var isConnected by mutableStateOf(false)
+        private set
+
+    var tables by mutableStateOf<List<TableInfo>>(emptyList())
+        private set
+
+    var connectError by mutableStateOf<String?>(null)
         private set
 
     fun test(config: ConnectionConfig) {
@@ -29,6 +43,40 @@ class SessionViewmodel: ViewModel() {
             } finally {
                 isTesting = false
             }
+        }
+    }
+
+    fun connect(config: ConnectionConfig) {
+        if (isConnecting) return
+        viewModelScope.launch {
+            isConnecting = true
+            connectError = null
+            try {
+                when (val r = client.connect(config)) {
+                    is TestResult.Failure -> {
+                        connectError = r.message
+                        isConnected = false
+                        tables = emptyList()
+                    }
+                    is TestResult.Success -> {
+                        isConnected = true
+                        when (val t = client.listTables()) {
+                            is TableResult.Loaded -> tables = t.tables
+                            is TableResult.Failed -> connectError = t.message
+                        }
+                    }
+                }
+            } finally {
+                isConnecting = false
+            }
+        }
+    }
+
+    fun disconnect() {
+        viewModelScope.launch {
+            client.disconnect()
+            isConnected = false
+            tables = emptyList()
         }
     }
 }

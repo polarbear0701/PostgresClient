@@ -99,6 +99,13 @@ fun HostField(
 
     val vm: ConnectionsViewModel = viewModel()
     var saveConnection by rememberSaveable { mutableStateOf(false) }
+    val config = ConnectionConfig(
+        host = host,
+        port = port.toIntOrNull() ?: 5432,
+        database = defaultDatabase,
+        username = username,
+        password = password,
+    )
 
     Column(
         modifier = Modifier
@@ -190,13 +197,7 @@ fun HostField(
                     enabled = !session.isTesting && host.isNotBlank() && username.isNotBlank(),
                     onClick = {
                         session.test(
-                            ConnectionConfig(
-                                host = host,
-                                port = port.toIntOrNull() ?: 5432,
-                                database = defaultDatabase,
-                                username = username,
-                                password = password
-                            )
+                            config
                         )
                     },
                     border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary),
@@ -213,6 +214,7 @@ fun HostField(
                     modifier = Modifier.padding(2.dp).width(100.dp).height(40.dp),
                     shape = RoundedCornerShape(8.dp),
                     onClick = {
+                        session.connect(config)
                         if (saveConnection) {
                             vm.save(name = name, host = host, port = port, username = username)
                         }
@@ -222,7 +224,7 @@ fun HostField(
                         contentColor = androidx.compose.ui.graphics.Color.White))
                 {
                     Text(
-                        text = "Connect",
+                        if (session.isConnecting) "Connecting..." else "Connect",
                         fontSize = 13.sp
                     )
                 }
