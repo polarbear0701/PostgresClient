@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.postgresqlclient.data.ConnectionConfig
+import com.example.postgresqlclient.data.ConnectionFormState
 import com.example.postgresqlclient.data.PostgresClient
 import com.example.postgresqlclient.data.TableInfo
 import com.example.postgresqlclient.data.TableResult
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 
 class SessionViewmodel: ViewModel() {
     private val client = PostgresClient()
+    val form = ConnectionFormState()
     var isTesting by mutableStateOf(false)
         private set
 
@@ -29,8 +31,19 @@ class SessionViewmodel: ViewModel() {
     var tables by mutableStateOf<List<TableInfo>>(emptyList())
         private set
 
+    var selectedTable by mutableStateOf<TableInfo?>(null)
+        private set
+
     var connectError by mutableStateOf<String?>(null)
         private set
+
+    fun openTable(table: TableInfo) {
+        selectedTable = table
+    }
+
+    fun closeTable() {
+        selectedTable = null
+    }
 
     fun test(config: ConnectionConfig) {
         if (isTesting) return
@@ -53,16 +66,16 @@ class SessionViewmodel: ViewModel() {
             connectError = null
             try {
                 when (val r = client.connect(config)) {
-                    is TestResult.Failure -> {
-                        connectError = r.message
-                        isConnected = false
-                        tables = emptyList()
-                    }
-                    is TestResult.Success -> {
-                        isConnected = true
-                        when (val t = client.listTables()) {
-                            is TableResult.Loaded -> tables = t.tables
-                            is TableResult.Failed -> connectError = t.message
+                    is TestResult.Failure -> connectError = r.message
+                    is TestResult.Success -> when (val t = client.listTables()) {
+                        is TableResult.Loaded -> {
+                            tables = t.tables
+                            selectedTable = null
+                            isConnected = true
+                        }
+                        is TableResult.Failed -> {
+                            connectError = t.message
+                            client.disconnect()
                         }
                     }
                 }
@@ -76,6 +89,7 @@ class SessionViewmodel: ViewModel() {
         viewModelScope.launch {
             client.disconnect()
             isConnected = false
+            selectedTable = null
             tables = emptyList()
         }
     }
